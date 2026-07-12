@@ -236,7 +236,7 @@ export class WebLarekAPI extends Api implements IWebLarekAPI {
     loginUser = (data: UserLoginBodyDto) => {
         this.getCsrfToken()
             .then((token) => {
-                this.request<UserResponseToken>('/auth/login', {
+               return this.request<UserResponseToken>('/auth/login', {
                     method: 'POST',
                     body: JSON.stringify(data),
                     headers: {
@@ -254,7 +254,7 @@ export class WebLarekAPI extends Api implements IWebLarekAPI {
     registerUser = (data: UserRegisterBodyDto) => {
         this.getCsrfToken()
         .then((token) => {
-            this.request<UserResponseToken>('/auth/register', {
+            return this.request<UserResponseToken>('/auth/register', {
             method: 'POST',
             body: JSON.stringify(data),
             headers: {
