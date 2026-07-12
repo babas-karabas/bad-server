@@ -25,7 +25,7 @@ app.use(serveStatic(path.join(__dirname, 'public')))
 app.use(urlencoded({ extended: true }))
 app.use(json())
 
-app.options('*', cors())
+app.options('*', cors({ origin: ORIGIN_ALLOW, credentials: true }))
 app.use(apiLimiter)
 app.use(routes)
 app.use(errors())

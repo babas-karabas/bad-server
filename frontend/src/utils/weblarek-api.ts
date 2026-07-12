@@ -226,26 +226,47 @@ export class WebLarekAPI extends Api implements IWebLarekAPI {
         )
     }
 
-    loginUser = (data: UserLoginBodyDto) => {
-        return this.request<UserResponseToken>('/auth/login', {
-            method: 'POST',
-            body: JSON.stringify(data),
-            headers: {
-                'Content-Type': 'application/json',
-            },
+    getCsrfToken = () => {
+        return this.request<{ csrfToken: string }>('/auth/csrf-token', {
+            method: 'GET',
             credentials: 'include',
         })
     }
 
+    loginUser = (data: UserLoginBodyDto) => {
+        this.getCsrfToken()
+            .then((token) => {
+                this.request<UserResponseToken>('/auth/login', {
+                    method: 'POST',
+                    body: JSON.stringify(data),
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': token.csrfToken,
+                    },
+                    credentials: 'include',
+                })
+            })
+            .catch(() => {
+                throw new Error()
+            })
+    }
+
     registerUser = (data: UserRegisterBodyDto) => {
-        return this.request<UserResponseToken>('/auth/register', {
+        this.getCsrfToken()
+        .then((token) => {
+            this.request<UserResponseToken>('/auth/register', {
             method: 'POST',
             body: JSON.stringify(data),
             headers: {
                 'Content-Type': 'application/json',
+                'X-CSRF-Token': token.csrfToken,
             },
             credentials: 'include',
         })
+    })
+    .catch(() => {
+                throw new Error()
+            })
     }
 
     getUser = () => {
