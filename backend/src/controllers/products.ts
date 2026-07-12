@@ -1,31 +1,51 @@
 import { NextFunction, Request, Response } from 'express'
 import { constants } from 'http2'
-import { Error as MongooseError } from 'mongoose'
+import mongoose, { Error as MongooseError } from 'mongoose'
 import { join } from 'path'
 import BadRequestError from '../errors/bad-request-error'
 import ConflictError from '../errors/conflict-error'
 import NotFoundError from '../errors/not-found-error'
 import Product from '../models/product'
 import movingFile from '../utils/movingFile'
+import sanitizeHtml from '../utils/sanitizeHtml'
+import { MAX_PAGE_SIZE } from '../config'
 
 // GET /product
 const getProducts = async (req: Request, res: Response, next: NextFunction) => {
     try {
-        const { page = 1, limit = 5 } = req.query
+        const { page = '1', limit = '5' } = req.query
+
+        if (typeof page !== 'string' || typeof limit !== 'string') {
+            return next(new BadRequestError('Некорректные параметры пагинации'))
+        }
+
+        const pageNumber = Number(page)
+        const limitNumber = Number(limit)
+
+        if (
+            !Number.isInteger(pageNumber) ||
+            pageNumber < 1 ||
+            !Number.isInteger(limitNumber) ||
+            limitNumber < 1 ||
+            limitNumber > MAX_PAGE_SIZE
+        ) {
+            return next(new BadRequestError('Некорректные параметры пагинации'))
+        }
+
         const options = {
-            skip: (Number(page) - 1) * Number(limit),
-            limit: Number(limit),
+            skip: (pageNumber - 1) * limitNumber,
+            limit: limitNumber,
         }
         const products = await Product.find({}, null, options)
         const totalProducts = await Product.countDocuments({})
-        const totalPages = Math.ceil(totalProducts / Number(limit))
+        const totalPages = Math.ceil(totalProducts / limitNumber)
         return res.send({
             items: products,
             pagination: {
                 totalProducts,
                 totalPages,
-                currentPage: Number(page),
-                pageSize: Number(limit),
+                currentPage: pageNumber,
+                pageSize: limitNumber,
             },
         })
     } catch (err) {
@@ -52,11 +72,11 @@ const createProduct = async (
         }
 
         const product = await Product.create({
-            description,
+            description: sanitizeHtml(description),
             image,
-            category,
+            category: sanitizeHtml(category),
             price,
-            title,
+            title: sanitizeHtml(title),
         })
         return res.status(constants.HTTP_STATUS_CREATED).send(product)
     } catch (error) {
@@ -81,7 +101,7 @@ const updateProduct = async (
 ) => {
     try {
         const { productId } = req.params
-        const { image } = req.body
+        const const { category, description, image, price, title } = req.body
 
         // Переносим картинку из временной папки
         if (image) {
@@ -96,9 +116,10 @@ const updateProduct = async (
             productId,
             {
                 $set: {
-                    ...req.body,
-                    price: req.body.price ? req.body.price : null,
-                    image: req.body.image ? req.body.image : undefined,
+                    category: sanitizeHtml(category),
+                    description: sanitizeHtml(description),
+                    price: price ? price : null,
+                    image: image ? image : undefined,
                 },
             },
             { runValidators: true, new: true }
@@ -129,6 +150,11 @@ const deleteProduct = async (
 ) => {
     try {
         const { productId } = req.params
+
+         if (!mongoose.Types.ObjectId.isValid(id)) {
+            return next(new BadRequestError('Некорректный id'))
+        }
+
         const product = await Product.findByIdAndDelete(productId).orFail(
             () => new NotFoundError('Нет товара по заданному id')
         )

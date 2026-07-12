@@ -1,7 +1,9 @@
 import { Request, Express } from 'express'
 import multer, { FileFilterCallback } from 'multer'
 import { mkdirSync } from 'fs'
-import { join } from 'path'
+import { join, basename } from 'path'
+import { MAX_FILE_SIZE, MAX_FILE_NAME_LENGTH, MIN_FILE_SIZE } from '../config'
+import BadRequestError from '../errors/bad-request-error'
 
 type DestinationCallback = (error: Error | null, destination: string) => void
 type FileNameCallback = (error: Error | null, filename: string) => void
@@ -29,7 +31,12 @@ const storage = multer.diskStorage({
         file: Express.Multer.File,
         cb: FileNameCallback
     ) => {
-        cb(null, file.originalname)
+
+        const fileName = basename(file.originalname)
+        if (!fileName || fileName.length > Number(MAX_FILE_NAME_LENGTH)) {
+            return cb(new BadRequestError('Имя файла слишком длинное'), fileName)
+        }
+        return cb(null, fileName)
     },
 })
 
@@ -49,8 +56,17 @@ const fileFilter = (
     if (!types.includes(file.mimetype)) {
         return cb(null, false)
     }
+    if (file.size > Number(MAX_FILE_SIZE)) {
+         return cb(new BadRequestError('Размер файла слишком большой'))
+    }
 
+    if (file.size < Number(MIN_FILE_SIZE)) {
+         return cb(new BadRequestError('Размер файла слишком маленький'))
+    }
     return cb(null, true)
 }
 
-export default multer({ storage, fileFilter })
+export default multer({ storage, fileFilter, limits: {
+        fileSize: Number(MAX_FILE_SIZE),
+        files: 1,
+    }, })

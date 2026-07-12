@@ -1,8 +1,12 @@
 import { NextFunction, Request, Response } from 'express'
-import { FilterQuery } from 'mongoose'
+import mongoose, { FilterQuery } from 'mongoose'
 import NotFoundError from '../errors/not-found-error'
 import Order from '../models/order'
 import User, { IUser } from '../models/user'
+import BadRequestError from '../errors/bad-request-error'
+import escapeRegExp from '../utils/escapeRegExp'
+import { sanitizeHtml } from '../utils/sanitizer'
+import { MAX_PAGE_SIZE, MAX_SEARCH_LENGTH } from '../config'
 
 // TODO: Добавить guard admin
 // eslint-disable-next-line max-len
@@ -14,8 +18,8 @@ export const getCustomers = async (
 ) => {
     try {
         const {
-            page = 1,
-            limit = 10,
+            page = '1',
+            limit = '10',
             sortField = 'createdAt',
             sortOrder = 'desc',
             registrationDateFrom,
@@ -29,17 +33,49 @@ export const getCustomers = async (
             search,
         } = req.query
 
+        const pageNumber = Number(page)
+        const limitNumber = Number(limit)
+
+        if (
+            !Number.isInteger(pageNumber) ||
+            pageNumber < 1 ||
+            !Number.isInteger(limitNumber) ||
+            limitNumber < 1 ||
+            limitNumber > Number(MAX_PAGE_SIZE)
+        ) {
+            return next(new BadRequestError('Некорректные параметры пагинации'))
+        }
+
         const filters: FilterQuery<Partial<IUser>> = {}
 
-        if (registrationDateFrom) {
+        if (registrationDateFrom !== undefined) {
+            if (typeof registrationDateFrom !== 'string') {
+                return next(new BadRequestError('Некорректная дата'))
+            }
+
+            const date = new Date(registrationDateFrom)
+
+            if (Number.isNaN(date.getTime())) {
+                return next(new BadRequestError('Некорректная дата'))
+            }
+
             filters.createdAt = {
                 ...filters.createdAt,
-                $gte: new Date(registrationDateFrom as string),
+                $gte: date,
             }
         }
 
-        if (registrationDateTo) {
-            const endOfDay = new Date(registrationDateTo as string)
+        if (registrationDateTo !== undefined) {
+            if (typeof registrationDateTo !== 'string') {
+                return next(new BadRequestError('Некорректная дата'))
+            }
+
+            const endOfDay = new Date(registrationDateTo)
+
+            if (Number.isNaN(endOfDay.getTime())) {
+                return next(new BadRequestError('Некорректная дата'))
+            }
+
             endOfDay.setHours(23, 59, 59, 999)
             filters.createdAt = {
                 ...filters.createdAt,
@@ -47,15 +83,34 @@ export const getCustomers = async (
             }
         }
 
-        if (lastOrderDateFrom) {
+        if (lastOrderDateFrom !== undefined) {
+            if (typeof lastOrderDateFrom !== 'string') {
+                return next(new BadRequestError('Некорректная дата'))
+            }
+
+            const date = new Date(lastOrderDateFrom)
+
+            if (Number.isNaN(date.getTime())) {
+                return next(new BadRequestError('Некорректная дата'))
+            }
+
             filters.lastOrderDate = {
                 ...filters.lastOrderDate,
-                $gte: new Date(lastOrderDateFrom as string),
+                $gte: date,
             }
         }
 
-        if (lastOrderDateTo) {
-            const endOfDay = new Date(lastOrderDateTo as string)
+       if (lastOrderDateTo !== undefined) {
+            if (typeof lastOrderDateTo !== 'string') {
+                return next(new BadRequestError('Некорректная дата'))
+            }
+
+            const endOfDay = new Date(lastOrderDateTo)
+
+            if (Number.isNaN(endOfDay.getTime())) {
+                return next(new BadRequestError('Некорректная дата'))
+            }
+
             endOfDay.setHours(23, 59, 59, 999)
             filters.lastOrderDate = {
                 ...filters.lastOrderDate,
@@ -63,36 +118,101 @@ export const getCustomers = async (
             }
         }
 
-        if (totalAmountFrom) {
+        if (totalAmountFrom !== undefined) {
+            if (typeof totalAmountFrom !== 'string') {
+                return next(
+                    new BadRequestError('Некорректное значение totalAmountFrom')
+                )
+            }
+
+            const value = Number(totalAmountFrom)
+
+            if (Number.isNaN(value)) {
+                return next(
+                    new BadRequestError('Некорректное значение totalAmountFrom')
+                )
+            }
+
             filters.totalAmount = {
                 ...filters.totalAmount,
-                $gte: Number(totalAmountFrom),
+                $gte: value,
             }
         }
 
-        if (totalAmountTo) {
+        if (totalAmountTo !== undefined) {
+            if (typeof totalAmountTo !== 'string') {
+                return next(
+                    new BadRequestError('Некорректное значение totalAmountTo')
+                )
+            }
+
+            const value = Number(totalAmountTo)
+
+            if (Number.isNaN(value)) {
+                return next(
+                    new BadRequestError('Некорректное значение totalAmountTo')
+                )
+            }
+
             filters.totalAmount = {
                 ...filters.totalAmount,
-                $lte: Number(totalAmountTo),
+                $lte: value,
             }
         }
 
-        if (orderCountFrom) {
+        if (orderCountFrom !== undefined) {
+            if (typeof orderCountFrom !== 'string') {
+                return next(
+                    new BadRequestError('Некорректное значение orderCountFrom')
+                )
+            }
+
+            const value = Number(orderCountFrom)
+
+            if (!Number.isInteger(value)) {
+                return next(
+                    new BadRequestError('Некорректное значение orderCountFrom')
+                )
+            }
+
             filters.orderCount = {
                 ...filters.orderCount,
-                $gte: Number(orderCountFrom),
+                $gte: value,
             }
         }
 
-        if (orderCountTo) {
+        if (orderCountTo !== undefined) {
+            if (typeof orderCountTo !== 'string') {
+                return next(
+                    new BadRequestError('Некорректное значение orderCountTo')
+                )
+            }
+
+            const value = Number(orderCountTo)
+
+            if (!Number.isInteger(value)) {
+                return next(
+                    new BadRequestError('Некорректное значение orderCountTo')
+                )
+            }
+
             filters.orderCount = {
                 ...filters.orderCount,
-                $lte: Number(orderCountTo),
+                $lte: value,
             }
         }
 
-        if (search) {
-            const searchRegex = new RegExp(search as string, 'i')
+        if (search !== undefined) {
+            if (
+                typeof search !== 'string' ||
+                search.length > MAX_SEARCH_LENGTH
+            ) {
+                return next(
+                    new BadRequestError('Некорректный поисковый запрос')
+                )
+            }
+
+            const searchRegex = new RegExp(escapeRegExp(search), 'i')
             const orders = await Order.find(
                 {
                     $or: [{ deliveryAddress: searchRegex }],
@@ -109,15 +229,27 @@ export const getCustomers = async (
         }
 
         const sort: { [key: string]: any } = {}
+        const sortFields = [
+            'createdAt',
+            'lastOrderDate',
+            'totalAmount',
+            'orderCount',
+            'name',
+        ]
 
-        if (sortField && sortOrder) {
-            sort[sortField as string] = sortOrder === 'desc' ? -1 : 1
+        if (
+            typeof sortField === 'string' &&
+            sortFields.includes(sortField)
+        ) {
+            sort[sortField] = sortOrder === 'asc' ? 1 : -1
+        } else {
+            sort.createdAt = -1
         }
 
         const options = {
             sort,
-            skip: (Number(page) - 1) * Number(limit),
-            limit: Number(limit),
+            skip: (pageNumber - 1) * limitNumber,
+            limit: limitNumber,
         }
 
         const users = await User.find(filters, null, options).populate([
@@ -137,15 +269,15 @@ export const getCustomers = async (
         ])
 
         const totalUsers = await User.countDocuments(filters)
-        const totalPages = Math.ceil(totalUsers / Number(limit))
+        const totalPages = Math.ceil(totalUsers / limitNumber)
 
         res.status(200).json({
             customers: users,
             pagination: {
                 totalUsers,
                 totalPages,
-                currentPage: Number(page),
-                pageSize: Number(limit),
+                currentPage: pageNumber,
+                pageSize: limitNumber,
             },
         })
     } catch (error) {
@@ -161,10 +293,23 @@ export const getCustomerById = async (
     next: NextFunction
 ) => {
     try {
-        const user = await User.findById(req.params.id).populate([
+        const { id } = req.params
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return next(new BadRequestError('Некорректный id'))
+        }
+
+        const user = await User.findById(id)
+        .populate([
             'orders',
             'lastOrder',
         ])
+        .orFail(
+                () =>
+                    new NotFoundError(
+                        'Пользователь с заданным id отсутствует в базе'
+                    )
+            )
         res.status(200).json(user)
     } catch (error) {
         next(error)
@@ -179,20 +324,46 @@ export const updateCustomer = async (
     next: NextFunction
 ) => {
     try {
+        const { id } = req.params
+
+           if (!mongoose.Types.ObjectId.isValid(id)) {
+                return next(new BadRequestError('Некорректный id'))
+            }
+
+        const { name, email, phone } = req.body
+
+        if (
+            (name !== undefined && typeof name !== 'string') ||
+            (email !== undefined && typeof email !== 'string') ||
+            (phone !== undefined && typeof phone !== 'string')
+        ) {
+            return next(new BadRequestError('Invalid data'))
+        }
+
+        let updatedData;
+        if (name !== undefined && email !== undefined && phone !== undefined) {
+            updatedData = {
+                name: sanitizeHtml(name),
+                email: sanitizeHtml(email),
+                phone: sanitizeHtml(phone),
+        }
+    }
+
         const updatedUser = await User.findByIdAndUpdate(
-            req.params.id,
-            req.body,
+            id,
+            updatedData,
             {
                 new: true,
+                runValidators: true,
             }
         )
+            .populate(['orders', 'lastOrder'])
             .orFail(
                 () =>
                     new NotFoundError(
                         'Пользователь по заданному id отсутствует в базе'
                     )
             )
-            .populate(['orders', 'lastOrder'])
         res.status(200).json(updatedUser)
     } catch (error) {
         next(error)
@@ -207,7 +378,13 @@ export const deleteCustomer = async (
     next: NextFunction
 ) => {
     try {
-        const deletedUser = await User.findByIdAndDelete(req.params.id).orFail(
+        const { id } = req.params
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return next(new BadRequestError('Некорректный id'))
+        }
+
+        const deletedUser = await User.findByIdAndDelete(id).orFail(
             () =>
                 new NotFoundError(
                     'Пользователь по заданному id отсутствует в базе'
