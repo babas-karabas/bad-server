@@ -36,7 +36,10 @@ const storage = multer.diskStorage({
         if (!fileName || fileName.length > Number(MAX_FILE_NAME_LENGTH)) {
             return cb(new BadRequestError('Имя файла слишком длинное'), fileName)
         }
-        return cb(null, fileName)
+
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9)
+        const newFileName = uniqueSuffix
+        return cb(null, newFileName)
     },
 })
 

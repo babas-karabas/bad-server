@@ -2,7 +2,6 @@ import { NextFunction, Request, Response } from 'express'
 import { constants } from 'http2'
 import { extname } from 'path'
 import BadRequestError from '../errors/bad-request-error'
-import { MIN_FILE_SIZE } from '../config'
 
 export const uploadFile = async (
     req: Request,

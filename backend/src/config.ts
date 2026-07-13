@@ -27,6 +27,6 @@ export const { ORIGIN_ALLOW } = process.env
 
 export const { MAX_PAGE_SIZE = 5 } = process.env
 export const { MAX_SEARCH_LENGTH = 5 } = process.env
-export const { MIN_FILE_SIZE = 2 * 1024 } = process.env
+export const { MIN_FILE_SIZE = 3 * 1024 } = process.env
 export const { MAX_FILE_SIZE = 9 * 1024 } = process.env
 export const { MAX_FILE_NAME_LENGTH = 100 } = process.env
