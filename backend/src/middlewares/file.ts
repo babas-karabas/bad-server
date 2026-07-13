@@ -1,5 +1,5 @@
 import { Request, Express } from 'express'
-import multer, { FileFilterCallback } from 'multer'
+import multer, { FileFilterCallback, MulterError } from 'multer'
 import { mkdirSync } from 'fs'
 import { join, basename } from 'path'
 import { MAX_FILE_SIZE, MAX_FILE_NAME_LENGTH, MIN_FILE_SIZE } from '../config'
@@ -59,11 +59,11 @@ const fileFilter = (
         return cb(null, false)
     }
     if (file.size > Number(MAX_FILE_SIZE)) {
-         return cb(new Error('Размер файла слишком большой'))
+         return cb(new MulterError("LIMIT_FILE_SIZE", 'Размер файла слишком большой'))
     }
 
     if (file.size < Number(MIN_FILE_SIZE)) {
-        return cb(new Error('Размер файла слишком маленький'))
+        return cb(new MulterError("LIMIT_FILE_SIZE", 'Размер файла слишком маленький'))
     }
     return cb(null, true)
 }

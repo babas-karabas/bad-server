@@ -236,7 +236,7 @@ export class WebLarekAPI extends Api implements IWebLarekAPI {
     loginUser = (data: UserLoginBodyDto): Promise<UserResponseToken> => {
         return this.getCsrfToken()
             .then((token) => {
-               return this.request<UserResponseToken>('/auth/login', {
+                return this.request<UserResponseToken>('/auth/login', {
                     method: 'POST',
                     body: JSON.stringify(data),
                     headers: {
@@ -253,18 +253,18 @@ export class WebLarekAPI extends Api implements IWebLarekAPI {
 
     registerUser = (data: UserRegisterBodyDto): Promise<UserResponseToken> => {
         return this.getCsrfToken()
-        .then((token) => {
-            return this.request<UserResponseToken>('/auth/register', {
-            method: 'POST',
-            body: JSON.stringify(data),
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-Token': token.csrfToken,
-            },
-            credentials: 'include',
-        })
-    })
-    .catch(() => {
+            .then((token) => {
+                return this.request<UserResponseToken>('/auth/register', {
+                    method: 'POST',
+                    body: JSON.stringify(data),
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-Token': token.csrfToken,
+                    },
+                    credentials: 'include',
+                })
+            })
+            .catch(() => {
                 throw new Error()
             })
     }
@@ -320,7 +320,6 @@ export class WebLarekAPI extends Api implements IWebLarekAPI {
     }
 
     createProduct = (data: Omit<IProduct, '_id'>) => {
-        console.log(data)
         return this.requestWithRefresh<IProduct>('/product', {
             method: 'POST',
             body: JSON.stringify(data),
@@ -338,16 +337,24 @@ export class WebLarekAPI extends Api implements IWebLarekAPI {
     }
 
     uploadFile = (data: FormData) => {
-        return this.requestWithRefresh<IFile>('/upload', {
-            method: 'POST',
-            body: data,
-            headers: {
-                Authorization: `Bearer ${getCookie('accessToken')}`,
-            },
-        }).then((data) => ({
-            ...data,
-            fileName: data.fileName,
-        }))
+        return this.getCsrfToken()
+            .then((token) => {
+                return this.requestWithRefresh<IFile>('/upload', {
+                    method: 'POST',
+                    body: data,
+                    headers: {
+                        Authorization: `Bearer ${getCookie('accessToken')}`,
+                        'X-CSRF-Token': token.csrfToken,
+                    },
+                })
+            })
+            .then((data) => ({
+                ...data,
+                fileName: data.fileName,
+            }))
+            .catch(() => {
+                throw new Error()
+            })
     }
 
     updateProduct = (data: Partial<Omit<IProduct, '_id'>>, id: string) => {
