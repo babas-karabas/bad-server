@@ -241,7 +241,7 @@ export class WebLarekAPI extends Api implements IWebLarekAPI {
                     body: JSON.stringify(data),
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-Token': token.csrfToken,
+                        'CSRF-Token': token.csrfToken,
                     },
                     credentials: 'include',
                 })
@@ -259,7 +259,7 @@ export class WebLarekAPI extends Api implements IWebLarekAPI {
                     body: JSON.stringify(data),
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-Token': token.csrfToken,
+                        'CSRF-Token': token.csrfToken,
                     },
                     credentials: 'include',
                 })
@@ -344,7 +344,7 @@ export class WebLarekAPI extends Api implements IWebLarekAPI {
                     body: data,
                     headers: {
                         Authorization: `Bearer ${getCookie('accessToken')}`,
-                        'X-CSRF-Token': token.csrfToken,
+                        'CSRF-Token': token.csrfToken,
                     },
                 })
             })
