@@ -3,7 +3,6 @@ import multer, { FileFilterCallback } from 'multer'
 import { mkdirSync } from 'fs'
 import { join, basename } from 'path'
 import { MAX_FILE_SIZE, MAX_FILE_NAME_LENGTH, MIN_FILE_SIZE } from '../config'
-import BadRequestError from '../errors/bad-request-error'
 
 type DestinationCallback = (error: Error | null, destination: string) => void
 type FileNameCallback = (error: Error | null, filename: string) => void
@@ -34,10 +33,10 @@ const storage = multer.diskStorage({
 
         const fileName = basename(file.originalname)
         if (!fileName || fileName.length > Number(MAX_FILE_NAME_LENGTH)) {
-            return cb(new BadRequestError('Имя файла слишком длинное'), fileName)
+            return cb(new Error('Имя файла слишком длинное'), fileName)
         }
 
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9)
+        const uniqueSuffix = Date.now() + String(Math.round(Math.random() * 1e9))
         const newFileName = uniqueSuffix
         return cb(null, newFileName)
     },
@@ -60,11 +59,11 @@ const fileFilter = (
         return cb(null, false)
     }
     if (file.size > Number(MAX_FILE_SIZE)) {
-         return cb(new BadRequestError('Размер файла слишком большой'))
+         return cb(new Error('Размер файла слишком большой'))
     }
 
     if (file.size < Number(MIN_FILE_SIZE)) {
-         return cb(new BadRequestError('Размер файла слишком маленький'))
+        return cb(new Error('Размер файла слишком маленький'))
     }
     return cb(null, true)
 }
