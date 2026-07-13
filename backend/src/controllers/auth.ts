@@ -9,7 +9,7 @@ import ConflictError from '../errors/conflict-error'
 import NotFoundError from '../errors/not-found-error'
 import UnauthorizedError from '../errors/unauthorized-error'
 import User from '../models/user'
-import sanitizeHtml from '../utils/sanitizeHtml'
+import { sanitize } from '../utils/sanitizer'
 
 // POST /auth/login
 const login = async (req: Request, res: Response, next: NextFunction) => {
@@ -51,9 +51,9 @@ const register = async (req: Request, res: Response, next: NextFunction) => {
             return next(new BadRequestError('Invalid data'))
         }
         const newUser = new User({
-            email: sanitizeHtml(email),
+            email: sanitize(email),
             password,
-            name: sanitizeHtml(name),
+            name: sanitize(name),
         })
 
         await newUser.save()
@@ -223,9 +223,9 @@ const updateCurrentUser = async (
 
         if (name !== undefined && email !== undefined && phone !== undefined) {
             updatedData = {
-                name: sanitizeHtml(name),
-                email: sanitizeHtml(email),
-                phone: sanitizeHtml(phone),
+                name: sanitize(name),
+                email: sanitize(email),
+                phone: sanitize(phone),
             }
         }
         const updatedUser = await User.findByIdAndUpdate(userId, updatedData, {

@@ -6,7 +6,7 @@ import Order, { IOrder } from '../models/order'
 import Product, { IProduct } from '../models/product'
 import User from '../models/user'
 import escapeRegExp from '../utils/escapeRegExp'
-import sanitizeHtml from '../utils/sanitizeHtml'
+import { sanitize } from '../utils/sanitizer'
 import { MAX_PAGE_SIZE, MAX_SEARCH_LENGTH } from '../config'
 
 // eslint-disable-next-line max-len
@@ -47,7 +47,7 @@ export const getOrders = async (
             return next(new BadRequestError('Некорректные параметры пагинации'))
         }
 
-        const limitNumber = Math.min(parsedLimit, MAX_PAGE_SIZE)
+        const limitNumber = Math.min(parsedLimit, Number(MAX_PAGE_SIZE))
 
         const filters: FilterQuery<Partial<IOrder>> = {}
 
@@ -161,7 +161,7 @@ export const getOrders = async (
         if (search !== undefined) {
             if (
                 typeof search !== 'string' ||
-                search.length > MAX_SEARCH_LENGTH
+                search.length > Number(MAX_SEARCH_LENGTH)
             ) {
                 return next(
                     new BadRequestError('Некорректный поисковый запрос')
@@ -259,7 +259,7 @@ export const getOrdersCurrentUser = async (
             return next(new BadRequestError('Некорректные параметры пагинации'))
         }
 
-        const limitNumber = Math.min(parsedLimit, MAX_PAGE_SIZE)
+        const limitNumber = Math.min(parsedLimit, Number(MAX_PAGE_SIZE))
 
         const options = {
             skip: (pageNumber  - 1) * limitNumber,
@@ -290,7 +290,7 @@ export const getOrdersCurrentUser = async (
          if (search !== undefined) {
             if (
                 typeof search !== 'string' ||
-                search.length > MAX_SEARCH_LENGTH
+                search.length > Number(MAX_SEARCH_LENGTH)
             ) {
                 return next(
                     new BadRequestError('Некорректный поисковый запрос')
@@ -349,7 +349,7 @@ export const getOrderByNumber = async (
         }
 
         const order = await Order.findOne({
-            orderNumber: orderNumber,
+            orderNumber,
         })
             .populate(['customer', 'products'])
             .orFail(
@@ -381,7 +381,7 @@ export const getOrderCurrentUserByNumber = async (
         }
 
         const order = await Order.findOne({
-            orderNumber: orderNumber,
+            orderNumber,
         })
             .populate(['customer', 'products'])
             .orFail(
@@ -437,11 +437,11 @@ export const createOrder = async (
             totalAmount: total,
             products: items,
             payment,
-            phone: sanitizeHtml(phone),
-            email: sanitizeHtml(email),
-            comment: sanitizeHtml(comment) ?? '',
+            phone: sanitize(phone),
+            email: sanitize(email),
+            comment: sanitize(comment) ?? '',
             customer: userId,
-            deliveryAddress: sanitizeHtml(address),
+            deliveryAddress: sanitize(address),
         })
         const populateOrder = await newOrder.populate(['customer', 'products'])
         await populateOrder.save()

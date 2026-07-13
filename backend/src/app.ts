@@ -16,7 +16,6 @@ const app = express()
 
 app.use(cookieParser())
 
-app.use(cors())
 app.use(cors({ origin: ORIGIN_ALLOW, credentials: true }));
 // app.use(express.static(path.join(__dirname, 'public')));
 
@@ -25,7 +24,7 @@ app.use(serveStatic(path.join(__dirname, 'public')))
 app.use(urlencoded({ extended: true }))
 app.use(json())
 
-app.options('*', cors({ origin: ORIGIN_ALLOW, credentials: true }))
+app.options('*', cors())
 app.use(apiLimiter)
 app.use(routes)
 app.use(errors())

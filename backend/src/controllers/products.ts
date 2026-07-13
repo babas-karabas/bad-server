@@ -7,7 +7,7 @@ import ConflictError from '../errors/conflict-error'
 import NotFoundError from '../errors/not-found-error'
 import Product from '../models/product'
 import movingFile from '../utils/movingFile'
-import sanitizeHtml from '../utils/sanitizeHtml'
+import { sanitize } from '../utils/sanitizer'
 import { MAX_PAGE_SIZE } from '../config'
 
 // GET /product
@@ -27,7 +27,7 @@ const getProducts = async (req: Request, res: Response, next: NextFunction) => {
             pageNumber < 1 ||
             !Number.isInteger(limitNumber) ||
             limitNumber < 1 ||
-            limitNumber > MAX_PAGE_SIZE
+            limitNumber > Number(MAX_PAGE_SIZE)
         ) {
             return next(new BadRequestError('Некорректные параметры пагинации'))
         }
@@ -72,11 +72,11 @@ const createProduct = async (
         }
 
         const product = await Product.create({
-            description: sanitizeHtml(description),
+            description: sanitize(description),
             image,
-            category: sanitizeHtml(category),
+            category: sanitize(category),
             price,
-            title: sanitizeHtml(title),
+            title: sanitize(title),
         })
         return res.status(constants.HTTP_STATUS_CREATED).send(product)
     } catch (error) {
@@ -101,7 +101,7 @@ const updateProduct = async (
 ) => {
     try {
         const { productId } = req.params
-        const const { category, description, image, price, title } = req.body
+        const { category, description, image, price, title } = req.body
 
         // Переносим картинку из временной папки
         if (image) {
@@ -116,10 +116,11 @@ const updateProduct = async (
             productId,
             {
                 $set: {
-                    category: sanitizeHtml(category),
-                    description: sanitizeHtml(description),
-                    price: price ? price : null,
-                    image: image ? image : undefined,
+                    category: sanitize(category),
+                    description: sanitize(description),
+                    price: price ?? null,
+                    image: image ?? undefined,
+                    title: sanitize(title),
                 },
             },
             { runValidators: true, new: true }
@@ -151,7 +152,7 @@ const deleteProduct = async (
     try {
         const { productId } = req.params
 
-         if (!mongoose.Types.ObjectId.isValid(id)) {
+         if (!mongoose.Types.ObjectId.isValid(productId)) {
             return next(new BadRequestError('Некорректный id'))
         }
 

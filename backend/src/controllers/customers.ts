@@ -5,7 +5,7 @@ import Order from '../models/order'
 import User, { IUser } from '../models/user'
 import BadRequestError from '../errors/bad-request-error'
 import escapeRegExp from '../utils/escapeRegExp'
-import { sanitizeHtml } from '../utils/sanitizer'
+import { sanitize } from '../utils/sanitizer'
 import { MAX_PAGE_SIZE, MAX_SEARCH_LENGTH } from '../config'
 
 // TODO: Добавить guard admin
@@ -205,7 +205,7 @@ export const getCustomers = async (
         if (search !== undefined) {
             if (
                 typeof search !== 'string' ||
-                search.length > MAX_SEARCH_LENGTH
+                search.length > Number(MAX_SEARCH_LENGTH)
             ) {
                 return next(
                     new BadRequestError('Некорректный поисковый запрос')
@@ -343,9 +343,9 @@ export const updateCustomer = async (
         let updatedData;
         if (name !== undefined && email !== undefined && phone !== undefined) {
             updatedData = {
-                name: sanitizeHtml(name),
-                email: sanitizeHtml(email),
-                phone: sanitizeHtml(phone),
+                name: sanitize(name),
+                email: sanitize(email),
+                phone: sanitize(phone),
         }
     }
 
