@@ -20,7 +20,7 @@ export const getOrders = async (
     try {
         const {
             page = '1',
-            limit = '10',
+            limit = '5',
             sortField = 'createdAt',
             sortOrder = 'desc',
             status,

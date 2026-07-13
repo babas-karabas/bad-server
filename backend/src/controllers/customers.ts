@@ -34,18 +34,20 @@ export const getCustomers = async (
         } = req.query
 
         const pageNumber = Number(page)
-        const limitNumber = Number(limit)
+        const parsedLimit = Number(limit)
 
         if (
             !Number.isInteger(pageNumber) ||
             pageNumber < 1 ||
-            !Number.isInteger(limitNumber) ||
-            limitNumber < 1 ||
-            limitNumber > Number(MAX_PAGE_SIZE)
+            !Number.isInteger(parsedLimit) ||
+            parsedLimit < 1 ||
+            parsedLimit > Number(MAX_PAGE_SIZE)
         ) {
             return next(new BadRequestError('Некорректные параметры пагинации'))
         }
 
+        const limitNumber = Math.min(parsedLimit, Number(MAX_PAGE_SIZE))
+        
         const filters: FilterQuery<Partial<IUser>> = {}
 
         if (registrationDateFrom !== undefined) {
