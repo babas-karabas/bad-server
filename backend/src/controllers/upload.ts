@@ -12,7 +12,7 @@ export const uploadFile = async (
         return next(new BadRequestError('Файл не загружен'))
     }
     try {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9)
+        const uniqueSuffix = Date.now() + Math.round(Math.random() * 1e9)
         const ext = extname(req.file.originalname)
         const fileName = process.env.UPLOAD_PATH
             ? `/${process.env.UPLOAD_PATH}/${uniqueSuffix}-${ext}`
