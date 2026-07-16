@@ -55,9 +55,25 @@ class Api {
 
     protected async request<T>(endpoint: string, options: RequestInit) {
         try {
+            const token = await fetch(`${this.baseUrl}/auth/csrf-token`, {
+                ...this.options,
+                method: 'GET',
+            })
+
+            const csrfToken = await this.handleResponse<{csrfToken: string}>(token)
+
+            const headers: Record<string, string> = {
+                ...(this.options.headers as Record<string, string>),
+                ...((options.headers as Record<string, string>) || {}),
+            }
+
+            if (csrfToken && !['GET', 'HEAD', 'OPTIONS'].includes(options.method || 'GET')) {
+                headers['X-CSRF-Token'] = csrfToken.csrfToken
+            }
             const res = await fetch(`${this.baseUrl}${endpoint}`, {
                 ...this.options,
                 ...options,
+                headers,
             })
             return await this.handleResponse<T>(res)
         } catch (error) {
@@ -226,46 +242,26 @@ export class WebLarekAPI extends Api implements IWebLarekAPI {
         )
     }
 
-    getCsrfToken = () => {
-        return this.request<{ csrfToken: string }>('/auth/csrf-token', {
-            method: 'GET',
+    loginUser = (data: UserLoginBodyDto) => {
+        return this.request<UserResponseToken>('/auth/login', {
+            method: 'POST',
+            body: JSON.stringify(data),
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
         })
     }
 
-    loginUser = (data: UserLoginBodyDto): Promise<UserResponseToken> => {
-        return this.getCsrfToken()
-            .then((token) => {
-                return this.request<UserResponseToken>('/auth/login', {
-                    method: 'POST',
-                    body: JSON.stringify(data),
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'CSRF-Token': token.csrfToken,
-                    },
-                    credentials: 'include',
-                })
-            })
-            .catch(() => {
-                throw new Error()
-            })
-    }
-
-    registerUser = (data: UserRegisterBodyDto): Promise<UserResponseToken> => {
-        return this.getCsrfToken()
-            .then((token) => {
-                return this.request<UserResponseToken>('/auth/register', {
-                    method: 'POST',
-                    body: JSON.stringify(data),
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'CSRF-Token': token.csrfToken,
-                    },
-                    credentials: 'include',
-                })
-            })
-            .catch(() => {
-                throw new Error()
-            })
+    registerUser = (data: UserRegisterBodyDto) => {
+        return this.request<UserResponseToken>('/auth/register', {
+            method: 'POST',
+            body: JSON.stringify(data),
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+        })
     }
 
     getUser = () => {
@@ -336,24 +332,16 @@ export class WebLarekAPI extends Api implements IWebLarekAPI {
     }
 
     uploadFile = (data: FormData) => {
-        return this.getCsrfToken()
-            .then((token) => {
-                return this.requestWithRefresh<IFile>('/upload', {
-                    method: 'POST',
-                    body: data,
-                    headers: {
-                        Authorization: `Bearer ${getCookie('accessToken')}`,
-                        'CSRF-Token': token.csrfToken,
-                    },
-                })
-            })
-            .then((data) => ({
-                ...data,
-                fileName: data.fileName,
-            }))
-            .catch(() => {
-                throw new Error()
-            })
+        return this.requestWithRefresh<IFile>('/upload', {
+            method: 'POST',
+            body: data,
+            headers: {
+                Authorization: `Bearer ${getCookie('accessToken')}`,
+            },
+        }).then((data) => ({
+            ...data,
+            fileName: data.fileName,
+        }))
     }
 
     updateProduct = (data: Partial<Omit<IProduct, '_id'>>, id: string) => {
