@@ -33,6 +33,13 @@ export const getOrders = async (
             search,
         } = req.query
 
+        const hasInjection = Object.keys(req.query).some((key) =>
+            key.includes('$')
+        )
+        if (hasInjection) {
+            throw new BadRequestError('Некорректные параметры запроса')
+        }
+
         if (typeof page !== 'string' || typeof limit !== 'string') {
             return next(new BadRequestError('Некорректные параметры пагинации'))
         }
@@ -62,7 +69,7 @@ export const getOrders = async (
             }
         }
 
-         if (totalAmountFrom !== undefined) {
+        if (totalAmountFrom !== undefined) {
             if (typeof totalAmountFrom !== 'string') {
                 return next(
                     new BadRequestError('Некорректное значение totalAmountFrom')
@@ -173,7 +180,9 @@ export const getOrders = async (
             const searchRegex = new RegExp(escapeRegExp(search), 'i')
             const searchNumber = Number(search)
 
-            const searchConditions: FilterQuery<IOrder>[] = [{ 'products.title': searchRegex }]
+            const searchConditions: FilterQuery<IOrder>[] = [
+                { 'products.title': searchRegex },
+            ]
 
             if (!Number.isNaN(searchNumber)) {
                 searchConditions.push({ orderNumber: searchNumber })
@@ -188,19 +197,11 @@ export const getOrders = async (
             filters.$or = searchConditions
         }
 
-        const sortFields = [
-            'createdAt',
-            'orderNumber',
-            'status',
-            'totalAmount',
-        ]
+        const sortFields = ['createdAt', 'orderNumber', 'status', 'totalAmount']
 
         const sort: { [key: string]: any } = {}
 
-         if (
-            typeof sortField === 'string' &&
-            sortFields.includes(sortField)
-        ) {
+        if (typeof sortField === 'string' && sortFields.includes(sortField)) {
             sort[sortField] = sortOrder === 'asc' ? 1 : -1
         } else {
             sort.createdAt = -1
@@ -264,7 +265,7 @@ export const getOrdersCurrentUser = async (
         const limitNumber = Math.min(parsedLimit, Number(MAX_PAGE_SIZE))
 
         const options = {
-            skip: (pageNumber  - 1) * limitNumber,
+            skip: (pageNumber - 1) * limitNumber,
             limit: limitNumber,
         }
 
@@ -289,7 +290,7 @@ export const getOrdersCurrentUser = async (
 
         let orders = user.orders as unknown as IOrder[]
 
-         if (search !== undefined) {
+        if (search !== undefined) {
             if (
                 typeof search !== 'string' ||
                 search.length > Number(MAX_SEARCH_LENGTH)

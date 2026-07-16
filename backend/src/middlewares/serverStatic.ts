@@ -12,8 +12,8 @@ export default function serveStatic(baseDir: string) {
         }
 
         // Проверяем, существует ли файл
-        fs.access(filePath, fs.constants.F_OK, (err) => {
-            if (err) {
+         fs.stat(filePath, (err, stats) => {
+            if (err || !stats.isFile()) {
                 // Файл не существует отдаем дальше мидлварам
                 return next()
             }
