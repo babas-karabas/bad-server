@@ -18,7 +18,7 @@ import {
 const authRouter = Router()
 
 authRouter.get('/user', auth, getCurrentUser)
-authRouter.patch('/me', auth, validateUserBody, updateCurrentUser)
+authRouter.patch('/me', auth, csrfProtection, validateUserBody, updateCurrentUser)
 authRouter.get('/user/roles', auth, getCurrentUserRoles)
 authRouter.post('/login', csrfProtection, validateAuthentication, login)
 authRouter.get('/token', refreshAccessToken)

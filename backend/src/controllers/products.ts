@@ -8,9 +8,11 @@ import NotFoundError from '../errors/not-found-error'
 import Product from '../models/product'
 import movingFile from '../utils/movingFile'
 import { sanitize } from '../utils/sanitizer'
-import { MAX_PAGE_SIZE } from '../config'
 
 // GET /product
+
+const MAX_PAGE_SIZE = 10
+
 const getProducts = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const { page = '1', limit = '5' } = req.query
@@ -27,7 +29,7 @@ const getProducts = async (req: Request, res: Response, next: NextFunction) => {
             pageNumber < 1 ||
             !Number.isInteger(limitNumber) ||
             limitNumber < 1 ||
-            limitNumber > Number(MAX_PAGE_SIZE)
+            limitNumber > MAX_PAGE_SIZE
         ) {
             return next(new BadRequestError('Некорректные параметры пагинации'))
         }

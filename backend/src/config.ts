@@ -24,9 +24,3 @@ export const REFRESH_TOKEN = {
 }
 
 export const { ORIGIN_ALLOW } = process.env
-
-export const { MAX_PAGE_SIZE = 5 } = process.env
-export const { MAX_SEARCH_LENGTH = 5 } = process.env
-export const { MIN_FILE_SIZE } = process.env
-export const { MAX_FILE_SIZE } = process.env
-export const { MAX_FILE_NAME_LENGTH = 100 } = process.env
