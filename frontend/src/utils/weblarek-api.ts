@@ -33,6 +33,7 @@ export type ApiListResponse<Type> = {
 class Api {
     private readonly baseUrl: string
     protected options: RequestInit
+    private csrfToken: string | null = null
 
     constructor(baseUrl: string, options: RequestInit = {}) {
         this.baseUrl = baseUrl
@@ -53,26 +54,34 @@ class Api {
                   )
     }
 
+    private async getCsrfToken(): Promise<string> {
+        if (this.csrfToken) {
+            return this.csrfToken
+        }
+        const { csrfToken } = await this.request<{ csrfToken: string }>(
+            '/auth/csrf-token',
+            { method: 'GET' }
+        )
+        this.csrfToken = csrfToken
+        return csrfToken
+    }
+
     protected async request<T>(endpoint: string, options: RequestInit) {
         try {
-            const token = await fetch(`${this.baseUrl}/auth/csrf-token`, {
-                ...this.options,
-                method: 'GET',
-            })
-
-            const csrfToken = await this.handleResponse<{csrfToken: string}>(token)
+            const method = (options.method ?? 'GET').toString().toUpperCase()
 
             const headers: Record<string, string> = {
                 ...(this.options.headers as Record<string, string>),
                 ...((options.headers as Record<string, string>) || {}),
             }
 
-            if (csrfToken && !['GET', 'HEAD', 'OPTIONS'].includes(options.method || 'GET')) {
-                headers['X-CSRF-Token'] = csrfToken.csrfToken
+            if (['POST', 'PATCH', 'PUT', 'DELETE'].includes(method)) {
+                headers['X-CSRF-Token'] = await this.getCsrfToken()
             }
             const res = await fetch(`${this.baseUrl}${endpoint}`, {
                 ...this.options,
                 ...options,
+                credentials: 'include',
                 headers,
             })
             return await this.handleResponse<T>(res)
