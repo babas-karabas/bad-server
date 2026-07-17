@@ -62,13 +62,13 @@ const fileFilter = (
         return cb(null, false)
     }
     
-    if (file.size < Number(MIN_FILE_SIZE)) {
+    if (file.size <= MIN_FILE_SIZE) {
         return cb(new BadRequestError('Размер файла слишком маленький'))
     }
     return cb(null, true)
 }
 
 export default multer({ storage, fileFilter, limits: {
-        fileSize: Number(MAX_FILE_SIZE),
+        fileSize: MAX_FILE_SIZE,
         files: 1,
     }, })
