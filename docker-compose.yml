@@ -2,8 +2,8 @@ services:
   frontend:
     build:
       context: frontend
-    env_file:
-      - frontend/.env
+    environment:
+      VITE_API_ORIGIN: http://localhost/api
     volumes:
       - frontend:/app/frontend/dist
 
