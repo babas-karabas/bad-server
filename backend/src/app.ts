@@ -13,6 +13,7 @@ import { apiLimiter } from './middlewares/rate-limit'
 
 const { PORT = 3000 } = process.env
 const app = express()
+app.use(apiLimiter)
 
 app.use(cookieParser())
 
@@ -25,7 +26,6 @@ app.use(urlencoded({ extended: true }))
 app.use(json())
 
 app.options('*', cors())
-app.use(apiLimiter)
 app.use(routes)
 app.use(errors())
 app.use(errorHandler)
