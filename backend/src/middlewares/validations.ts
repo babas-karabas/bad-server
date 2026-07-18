@@ -2,7 +2,7 @@ import { Joi, celebrate } from 'celebrate'
 import { Types } from 'mongoose'
 
 // eslint-disable-next-line no-useless-escape
-export const phoneRegExp = /^(\+\d+)?(?:\s|-?|\(?\d+\)?)+$/
+export const phoneRegExp = /^\+?[0-9\s\-()]{7,20}$/;
 
 export enum PaymentType {
     Card = 'card',
@@ -32,19 +32,19 @@ export const validateOrderBody = celebrate({
                     'Указано не валидное значение для способа оплаты, возможные значения - "card", "online"',
                 'string.empty': 'Не указан способ оплаты',
             }),
-        email: Joi.string().email().required().messages({
+        email: Joi.string().email().max(254).required().messages({
             'string.empty': 'Не указан email',
         }),
-        phone: Joi.string().required().pattern(phoneRegExp).messages({
+        phone: Joi.string().required().max(20).pattern(phoneRegExp).messages({
             'string.empty': 'Не указан телефон',
         }),
-        address: Joi.string().required().messages({
+        address: Joi.string().max(200).required().messages({
             'string.empty': 'Не указан адрес',
         }),
         total: Joi.number().required().messages({
             'string.empty': 'Не указана сумма заказа',
         }),
-        comment: Joi.string().optional().allow(''),
+        comment: Joi.string().max(1000).optional().allow(''),
     }),
 })
 
@@ -112,6 +112,7 @@ export const validateUserBody = celebrate({
         email: Joi.string()
             .required()
             .email()
+            .max(254)
             .message('Поле "email" должно быть валидным email-адресом')
             .messages({
                 'string.empty': 'Поле "email" должно быть заполнено',
@@ -124,6 +125,7 @@ export const validateAuthentication = celebrate({
         email: Joi.string()
             .required()
             .email()
+            .max(254)
             .message('Поле "email" должно быть валидным email-адресом')
             .messages({
                 'string.required': 'Поле "email" должно быть заполнено',
