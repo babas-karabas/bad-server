@@ -7,12 +7,10 @@ import Product, { IProduct } from '../models/product'
 import User from '../models/user'
 import escapeRegExp from '../utils/escapeRegExp'
 import { sanitize } from '../utils/sanitizer'
+import { MAX_PAGE_SIZE, MAX_SEARCH_LENGTH } from '../config'
 
 // eslint-disable-next-line max-len
 // GET /orders?page=2&limit=5&sort=totalAmount&order=desc&orderDateFrom=2024-07-01&orderDateTo=2024-08-01&status=delivering&totalAmountFrom=100&totalAmountTo=1000&search=%2B1
-
-const MAX_PAGE_SIZE = 10
-const MAX_SEARCH_LENGTH = 100
 
 export const getOrders = async (
     req: Request,
@@ -33,10 +31,19 @@ export const getOrders = async (
             search,
         } = req.query
 
-        const hasInjection = Object.keys(req.query).some((key) =>
-            key.includes('$')
-        )
-        if (hasInjection) {
+        const hasInjection = (value: unknown): boolean => {
+            if (Array.isArray(value)) {
+                return value.some(hasInjection)
+            }
+            if (value !== null && typeof value === 'object') {
+                return Object.entries(value).some(
+                    ([key, nested]) => key.includes('$') || hasInjection(nested)
+                )
+            }
+            return false
+        }
+
+        if (hasInjection(req.query)) {
             throw new BadRequestError('Некорректные параметры запроса')
         }
 

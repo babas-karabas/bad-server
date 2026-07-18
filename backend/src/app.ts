@@ -5,13 +5,12 @@ import 'dotenv/config'
 import express, { json, urlencoded } from 'express'
 import mongoose from 'mongoose'
 import path from 'path'
-import { DB_ADDRESS, ORIGIN_ALLOW } from './config'
+import { DB_ADDRESS, ORIGIN_ALLOW, PORT } from './config'
 import errorHandler from './middlewares/error-handler'
 import serveStatic from './middlewares/serverStatic'
 import routes from './routes'
 import { apiLimiter } from './middlewares/rate-limit'
 
-const { PORT = 3000 } = process.env
 const app = express()
 app.use(apiLimiter)
 

@@ -6,12 +6,11 @@ import User, { IUser } from '../models/user'
 import BadRequestError from '../errors/bad-request-error'
 import escapeRegExp from '../utils/escapeRegExp'
 import { sanitize } from '../utils/sanitizer'
+import { MAX_PAGE_SIZE, MAX_SEARCH_LENGTH } from '../config'
 
 // TODO: Добавить guard admin
 // eslint-disable-next-line max-len
 // Get GET /customers?page=2&limit=5&sort=totalAmount&order=desc&registrationDateFrom=2023-01-01&registrationDateTo=2023-12-31&lastOrderDateFrom=2023-01-01&lastOrderDateTo=2023-12-31&totalAmountFrom=100&totalAmountTo=1000&orderCountFrom=1&orderCountTo=10
-const MAX_PAGE_SIZE = 10
-const MAX_SEARCH_LENGTH = 100
 
 export const getCustomers = async (
     req: Request,
@@ -42,8 +41,7 @@ export const getCustomers = async (
             !Number.isInteger(pageNumber) ||
             pageNumber < 1 ||
             !Number.isInteger(parsedLimit) ||
-            parsedLimit < 1 ||
-            parsedLimit > MAX_PAGE_SIZE
+            parsedLimit < 1
         ) {
             return next(new BadRequestError('Некорректные параметры пагинации'))
         }
